@@ -1,0 +1,170 @@
+.boundary-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    animation: fadeInOut 1.5s ease-in-out forwards;
+}
+
+.boundary-card {
+    position: relative;
+    width: 320px;
+    height: 420px;
+    background-color: #1a1a3a;
+    /* Dark blue background */
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    transform: scale(0.5);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.burst-bg {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    right: -50%;
+    bottom: -50%;
+    /* Create angled burst lines using repeating conic gradient */
+    background: repeating-conic-gradient(from 0deg,
+            #1a1a3a 0deg 15deg,
+            #e6005c 15deg 20deg,
+            #1a1a3a 20deg 35deg,
+            #00ccff 35deg 40deg,
+            #1a1a3a 40deg 55deg,
+            #ffcc00 55deg 60deg);
+    animation: spinBurst 20s linear infinite;
+    z-index: 1;
+}
+
+.boundary-content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.giant-number {
+    font-size: 320px;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1;
+    position: absolute;
+    margin-top: -60px;
+    font-family: 'Arial Black', Impact, sans-serif;
+    text-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.batsman-silhouette {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 140px;
+    height: 200px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.yellow-sunburst {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    z-index: -1;
+    /* Create spiky sunburst effect */
+    background: repeating-conic-gradient(from 0deg, #ffe600 0deg 10deg, transparent 10deg 20deg);
+    animation: spinBurst 5s linear infinite reverse;
+}
+
+.batsman-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.boundary-text {
+    position: absolute;
+    bottom: 40px;
+    font-size: 85px;
+    font-weight: 900;
+    color: #ff0055;
+    z-index: 4;
+    text-transform: uppercase;
+    font-family: 'Arial Black', Impact, sans-serif;
+    letter-spacing: 2px;
+    text-shadow:
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff,
+        3px 6px 15px rgba(0, 0, 0, 0.6);
+    transform: rotate(-10deg);
+}
+
+/* Specific styling for 4 and 6 */
+.type-4 .boundary-text {
+    color: #ff0055;
+}
+
+.type-6 .boundary-text {
+    color: #ff0055;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spinBurst {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
