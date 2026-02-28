@@ -25,13 +25,13 @@ export default function MatchSetup() {
         const teamA: Team = {
             id: uuidv4(),
             name: teamAName,
-            players: Array.from({ length: 11 }).map((_, i) => ({ id: uuidv4(), name: `Player A${i + 1} ` })) // placeholder players for MVP speed
+            players: Array.from({ length: 11 }).map((_, i) => ({ id: uuidv4(), name: `Player A${i + 1}` })) // placeholder players for MVP speed
         };
 
         const teamB: Team = {
             id: uuidv4(),
             name: teamBName,
-            players: Array.from({ length: 11 }).map((_, i) => ({ id: uuidv4(), name: `Player B${i + 1} ` }))
+            players: Array.from({ length: 11 }).map((_, i) => ({ id: uuidv4(), name: `Player B${i + 1}` }))
         };
 
         const tWinnerId = tossWinner === 'A' ? teamA.id : teamB.id;
@@ -52,7 +52,7 @@ export default function MatchSetup() {
 
         const newMatch: Match = {
             id: uuidv4(),
-            name: `${teamAName} vs ${teamBName} `,
+            name: `${teamAName} vs ${teamBName}`,
             date: Date.now(),
             teamA,
             teamB,
@@ -92,7 +92,7 @@ export default function MatchSetup() {
         };
 
         setMatches([...matches, newMatch]);
-        navigate(`/ match / ${newMatch.id} `);
+        navigate(`/match/${newMatch.id}`);
     };
 
     return (
