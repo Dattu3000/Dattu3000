@@ -1,0 +1,27 @@
+{
+    "name": "Cricket Scorer",
+    "short_name": "Cricket Scorer",
+    "description": "A dark-themed, mobile-first cricket scoring web application. Track matches, innings, and view beautiful wagon wheels and scorecards.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#121212",
+    "theme_color": "#2196F3",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

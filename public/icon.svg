@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Dynamic Dark Background -->
+  <rect width="1024" height="1024" rx="200" fill="url(#bg-gradient)" />
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1E2E" />
+      <stop offset="100%" stop-color="#0F0F16" />
+    </linearGradient>
+    <linearGradient id="bat-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5a623" />
+      <stop offset="100%" stop-color="#E65100" />
+    </linearGradient>
+    <!-- Shadow for depth -->
+    <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="15" dy="15" stdDeviation="10" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Glowing outer ring -->
+  <circle cx="512" cy="512" r="380" fill="none" stroke="#2196F3" stroke-width="30" stroke-opacity="0.8" />
+  
+  <g filter="url(#drop-shadow)">
+    <!-- Stylized Cricket Bat -->
+    <rect x="420" y="320" width="120" height="380" rx="15" fill="url(#bat-gradient)" transform="rotate(-25 480 510)" />
+    <!-- Bat Handle -->
+    <rect x="445" y="160" width="70" height="180" rx="10" fill="#2196F3" transform="rotate(-25 480 510)" />
+    <rect x="445" y="180" width="70" height="10" fill="#121212" transform="rotate(-25 480 510)" />
+    <rect x="445" y="220" width="70" height="10" fill="#121212" transform="rotate(-25 480 510)" />
+    <rect x="445" y="260" width="70" height="10" fill="#121212" transform="rotate(-25 480 510)" />
+    <rect x="445" y="300" width="70" height="10" fill="#121212" transform="rotate(-25 480 510)" />
+
+    <!-- stylized Cricket Ball -->
+    <circle cx="680" cy="620" r="90" fill="#E53935" />
+    <!-- Ball Seam -->
+    <path d="M 610 600 Q 680 550 750 640" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" />
+    <path d="M 640 590 L 650 605 M 670 580 L 680 595 M 700 590 L 710 605 M 720 610 L 730 625" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" />
+  </g>
+</svg>
