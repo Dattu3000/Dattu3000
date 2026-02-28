@@ -4,7 +4,6 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import type { Match } from '../types';
 import { ArrowLeft, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { WagonWheel } from '../components/WagonWheel';
 
 export default function Scorecard() {
     const { id } = useParams<{ id: string }>();
@@ -232,33 +231,6 @@ export default function Scorecard() {
                                                 })()}
                                             </tbody>
                                         </table>
-
-                                        {/* Wagon Wheels for Innings */}
-                                        <div style={{ display: 'flex', overflowX: 'auto', gap: '1.5rem', padding: '1.5rem 0', borderBottom: '1px solid var(--card-bg)' }}>
-                                            {(() => {
-                                                const batters = new Map<string, string>();
-                                                inning.balls.forEach(b => {
-                                                    if (b.runs > 0 && b.shotRegion) batters.set(b.batsmanId, match.teamA.players.find(p => p.id === b.batsmanId)?.name || match.teamB.players.find(p => p.id === b.batsmanId)?.name || 'Unknown');
-                                                });
-                                                const batterList = Array.from(batters.entries());
-
-                                                if (batterList.length === 0) return null;
-
-                                                return (
-                                                    <div style={{ width: '100%' }}>
-                                                        <h4 style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>Wagon Wheels</h4>
-                                                        <div style={{ display: 'flex', gap: '2rem', overflowX: 'auto', paddingBottom: '1rem' }}>
-                                                            {batterList.map(([id, name]) => (
-                                                                <div key={`wagon-${id}`} style={{ textAlign: 'center', minWidth: '200px' }}>
-                                                                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>{name}</div>
-                                                                    <WagonWheel balls={inning.balls} batsmanId={id} />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
 
                                         {/* Extras Summary */}
                                         <div style={{ padding: '0.5rem', margin: '1rem 0', fontSize: '0.85rem' }}>
