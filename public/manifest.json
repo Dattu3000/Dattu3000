@@ -1,6 +1,6 @@
 {
-    "name": "Cricket Scorer",
-    "short_name": "Cricket Scorer",
+    "name": "Crictrack",
+    "short_name": "Crictrack",
     "description": "A dark-themed, mobile-first cricket scoring web application. Track matches, innings, and view beautiful wagon wheels and scorecards.",
     "start_url": "/",
     "display": "standalone",
