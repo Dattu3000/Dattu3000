@@ -243,11 +243,11 @@ export default function MatchScoring() {
             const nbr = b.extraRuns + b.runs - 1;
             str = nbr > 0 ? `1NB+${nbr}` : `1NB`;
         } else if (b.extraType === 'bye') {
-            const br = b.extraRuns + b.runs; // support backwards compatibility
-            str = `${br}B`;
+            const br = b.extraRuns + b.runs - 1; // base runs used is 1, so subtract 1
+            str = br > 0 ? `1B+${br}` : `1B`;
         } else if (b.extraType === 'legBye') {
-            const lbr = b.extraRuns + b.runs;
-            str = `${lbr}LB`;
+            const lbr = b.extraRuns + b.runs - 1;
+            str = lbr > 0 ? `1LB+${lbr}` : `1LB`;
         }
         if (b.isWicket) str = 'W';
         return { id: b.id, label: str };
@@ -265,15 +265,9 @@ export default function MatchScoring() {
     const submitExtra = (runsChosen: number) => {
         if (!extraPrompt) return;
 
-        if (extraPrompt.type === 'bye' || extraPrompt.type === 'legBye') {
-            // For byes, the runs requested are pure extras. No bat runs.
-            // If user selects 0, it means 0 byes -> dot ball.
-            addBall(0, true, extraPrompt.type, runsChosen);
-        } else if (extraPrompt.type === 'wide') {
-            // For wide/NB, log base penalty as extraRuns (1) and runsChosen as bat runs
-            // This allows the UI to render `1WD+2` or `1NB+4` exactly as preferred.
-            addBall(runsChosen, true, extraPrompt.type, extraPrompt.baseRuns);
-        } else if (extraPrompt.type === 'noBall') {
+        if (extraPrompt.type === 'bye' || extraPrompt.type === 'legBye' || extraPrompt.type === 'wide' || extraPrompt.type === 'noBall') {
+            // For all extras, log base penalty as extraRuns (1) and runsChosen as bat runs
+            // This treats byes exactly like wides (e.g. 1 base bye + N runs chosen)
             addBall(runsChosen, true, extraPrompt.type, extraPrompt.baseRuns);
         }
 
@@ -711,8 +705,8 @@ export default function MatchScoring() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
                             <button className="btn btn-secondary" style={{ padding: '0.8rem 0' }} onClick={() => handleExtraClick('wide', 1)}>WD</button>
                             <button className="btn btn-secondary" style={{ padding: '0.8rem 0' }} onClick={() => handleExtraClick('noBall', 1)}>NB</button>
-                            <button className="btn btn-secondary" style={{ padding: '0.8rem 0' }} onClick={() => handleExtraClick('bye', 0)}>B</button>
-                            <button className="btn btn-secondary" style={{ padding: '0.8rem 0' }} onClick={() => handleExtraClick('legBye', 0)}>LB</button>
+                            <button className="btn btn-secondary" style={{ padding: '0.8rem 0' }} onClick={() => handleExtraClick('bye', 1)}>B</button>
+                            <button className="btn btn-secondary" style={{ padding: '0.8rem 0' }} onClick={() => handleExtraClick('legBye', 1)}>LB</button>
                             <button className="btn btn-danger" style={{ gridColumn: 'span 4', padding: '1rem 0', fontSize: '1.2rem' }} onClick={() => setWicketFlow({ step: 'type' })}>
                                 WICKET
                             </button>
