@@ -28,7 +28,7 @@ export default function Scorecard() {
 
     if (!match) return <div className="container">Loading...</div>;
 
-    const calculateMVP = () => {
+    const calculateMVP = (): { name: string, runs: number, wickets: number, points: number } | null => {
         if (!match || match.status !== 'completed') return null;
 
         const playerStats = new Map<string, { id: string, name: string, points: number, runs: number, wickets: number }>();
