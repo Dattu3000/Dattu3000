@@ -1,9 +1,10 @@
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import type { Match } from '../types';
-import { ArrowLeft, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Download, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { WagonWheel } from '../components/WagonWheel';
 
 export default function Scorecard() {
     const { id } = useParams<{ id: string }>();
@@ -12,6 +13,7 @@ export default function Scorecard() {
     const scorecardRef = useRef<HTMLDivElement>(null);
     const [expandedInnings, setExpandedInnings] = useState<number[]>([]);
     const [isExporting, setIsExporting] = useState(false);
+    const [selectedBatsmanId, setSelectedBatsmanId] = useState<string | null>(null);
 
     const matchIndex = matches.findIndex(m => m.id === id);
     const match = matches[matchIndex];
@@ -25,6 +27,74 @@ export default function Scorecard() {
     }, [match]);
 
     if (!match) return <div className="container">Loading...</div>;
+
+    const calculateMVP = () => {
+        if (!match || match.status !== 'completed') return null;
+
+        const playerStats = new Map<string, { id: string, name: string, points: number, runs: number, wickets: number }>();
+
+        const initPlayer = (id: string, name: string) => {
+            if (!playerStats.has(id)) {
+                playerStats.set(id, { id, name, points: 0, runs: 0, wickets: 0 });
+            }
+        };
+
+        match.innings.forEach(inning => {
+            if (inning.teamId === '') return;
+            const bTeam = match.teamA.id === inning.battingTeamId ? match.teamA : match.teamB;
+            const bowlTeam = match.teamA.id === inning.bowlingTeamId ? match.teamA : match.teamB;
+
+            inning.balls.forEach(b => {
+                // Batting points
+                if (b.extraType !== 'bye' && b.extraType !== 'legBye' && b.extraType !== 'wide') {
+                    if (b.runs > 0) {
+                        const batter = bTeam.players.find(p => p.id === b.batsmanId);
+                        if (batter) {
+                            initPlayer(batter.id, batter.name);
+                            const stat = playerStats.get(batter.id)!;
+                            stat.runs += b.runs;
+                            let pts = b.runs;
+                            if (b.runs === 4) pts += 1;
+                            if (b.runs === 6) pts += 2;
+                            stat.points += pts;
+                        }
+                    }
+                }
+
+                // Bowling points
+                if (b.isWicket && b.wicketType !== 'runOut' && b.wicketType !== 'retiredHurt') {
+                    const bowler = bowlTeam.players.find(p => p.id === b.bowlerId);
+                    if (bowler) {
+                        initPlayer(bowler.id, bowler.name);
+                        const stat = playerStats.get(bowler.id)!;
+                        stat.wickets += 1;
+                        stat.points += 25; // 25 per wicket
+                    }
+                }
+
+                // Fielding points
+                if (b.isWicket && b.fielderId) {
+                    const fielder = bowlTeam.players.find(p => p.id === b.fielderId);
+                    if (fielder) {
+                        initPlayer(fielder.id, fielder.name);
+                        const stat = playerStats.get(fielder.id)!;
+                        stat.points += 10; // 10 per catch/runout
+                    }
+                }
+            });
+        });
+
+        let mvp: { name: string, runs: number, wickets: number, points: number } | null = null;
+        let maxPoints = -1;
+        playerStats.forEach(stat => {
+            if (stat.points > maxPoints) {
+                maxPoints = stat.points;
+                mvp = stat;
+            }
+        });
+
+        return mvp;
+    };
 
     const toggleInning = (inningNum: number) => {
         setExpandedInnings(prev =>
@@ -214,19 +284,32 @@ export default function Scorecard() {
                                                         const sr = stat.balls > 0 ? ((stat.runs / stat.balls) * 100).toFixed(2) : '0.00';
                                                         const isNotOut = stat.dismissal === null;
                                                         return (
-                                                            <tr key={stat.id} style={{ borderBottom: '1px solid var(--card-bg)' }}>
-                                                                <td style={{ padding: '0.8rem 0.5rem' }}>
-                                                                    <div style={{ fontWeight: 'bold' }}>{stat.name}{isNotOut && match.status !== 'completed' ? '*' : ''}</div>
-                                                                    <div style={{ fontSize: '0.75rem', color: isNotOut ? 'var(--accent-color)' : 'var(--text-secondary)' }}>
-                                                                        {isNotOut ? 'not out' : stat.dismissal}
-                                                                    </div>
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>{stat.runs}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.balls}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.fours}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.sixes}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>{sr}</td>
-                                                            </tr>
+                                                            <React.Fragment key={stat.id}>
+                                                                <tr
+                                                                    onClick={() => setSelectedBatsmanId(selectedBatsmanId === stat.id ? null : stat.id)}
+                                                                    style={{ borderBottom: '1px solid var(--card-bg)', cursor: 'pointer' }}
+                                                                >
+                                                                    <td style={{ padding: '0.8rem 0.5rem' }}>
+                                                                        <div style={{ fontWeight: 'bold' }}>{stat.name}{isNotOut && match.status !== 'completed' ? '*' : ''}</div>
+                                                                        <div style={{ fontSize: '0.75rem', color: isNotOut ? 'var(--accent-color)' : 'var(--text-secondary)' }}>
+                                                                            {isNotOut ? 'not out' : stat.dismissal}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>{stat.runs}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.balls}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.fours}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.sixes}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>{sr}</td>
+                                                                </tr>
+                                                                {selectedBatsmanId === stat.id && (
+                                                                    <tr style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}>
+                                                                        <td colSpan={6} style={{ padding: '1rem', borderBottom: '1px solid var(--card-bg)' }}>
+                                                                            <h4 style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.8rem', textTransform: 'uppercase' }}>Wagon Wheel - {stat.name}</h4>
+                                                                            <WagonWheel balls={inning.balls} batsmanId={stat.id} />
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+                                                            </React.Fragment>
                                                         );
                                                     });
                                                 })()}
@@ -307,22 +390,33 @@ export default function Scorecard() {
                         );
                     })}
 
-                    {match.status === 'completed' && (
-                        <div style={{
-                            marginTop: '1rem',
-                            padding: '1rem',
-                            backgroundColor: 'var(--card-bg)',
-                            borderRadius: '8px',
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            color: 'var(--success-color)'
-                        }}>
-                            Match Completed
-                            {match.innings[1] && match.innings[1].score > match.innings[0].score ?
-                                ` • ${getTeamName(match.innings[1].battingTeamId)} Won` :
-                                ` • ${getTeamName(match.innings[0].battingTeamId)} Won`}
-                        </div>
-                    )}
+                    {match.status === 'completed' && (() => {
+                        const mvp = calculateMVP();
+                        return (
+                            <div className="card" style={{ marginTop: '1rem', textAlign: 'center' }}>
+                                <div style={{ fontWeight: 'bold', color: 'var(--success-color)', fontSize: '1.1rem', marginBottom: '1rem' }}>
+                                    Match Completed
+                                    {match.innings[1] && match.innings[1].score > match.innings[0].score ?
+                                        ` • ${getTeamName(match.innings[1].battingTeamId)} Won` :
+                                        ` • ${getTeamName(match.innings[0].battingTeamId)} Won`}
+                                </div>
+                                {mvp && (
+                                    <div style={{ padding: '1rem', background: 'rgba(247, 127, 0, 0.1)', borderRadius: '12px', border: '1px solid rgba(247, 127, 0, 0.3)', display: 'inline-block', minWidth: '80%' }}>
+                                        <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                            <Trophy size={18} /> Player of the Match
+                                        </div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{mvp.name}</div>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
+                                            {mvp.runs > 0 && `${mvp.runs} Runs`}
+                                            {mvp.runs > 0 && mvp.wickets > 0 && ' & '}
+                                            {mvp.wickets > 0 && `${mvp.wickets} Wickets`}
+                                            {mvp.runs === 0 && mvp.wickets === 0 && `${mvp.points} Impact Pts`}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>

@@ -457,37 +457,112 @@ export default function MatchScoring() {
                 </div>
 
                 {/* Players Area */}
-                <div className="card" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>Batters (Tap to edit)</div>
-                        {striker && (
-                            <div
-                                style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--accent-color)' }}
-                                onClick={() => editPlayerName(battingTeam.id, striker.id, striker.name)}
-                            >
-                                {striker.name} *
-                            </div>
-                        )}
-                        {nonStriker && (
-                            <div
-                                style={{ color: 'var(--text-secondary)', cursor: 'pointer', marginTop: '0.2rem' }}
-                                onClick={() => editPlayerName(battingTeam.id, nonStriker.id, nonStriker.name)}
-                            >
-                                {nonStriker.name}
-                            </div>
-                        )}
-                    </div>
-                    <div style={{ flex: 1, textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>Bowler (Tap to edit)</div>
-                        {bowler && (
-                            <div
-                                style={{ fontWeight: 'bold', cursor: 'pointer' }}
-                                onClick={() => editPlayerName(bowlingTeam.id, bowler.id, bowler.name)}
-                            >
-                                {bowler.name}
-                            </div>
-                        )}
-                    </div>
+                {/* Players Area */}
+                <div className="card" style={{ padding: '0.5rem 1rem' }}>
+                    {/* Batters Table */}
+                    <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse', marginBottom: '1rem' }}>
+                        <thead>
+                            <tr style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                <th style={{ textAlign: 'left', paddingBottom: '0.3rem' }}>Batter</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>R</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>B</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>4s</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>6s</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>SR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {striker && (() => {
+                                let runs = 0, balls = 0, fours = 0, sixes = 0;
+                                currentInning.balls.forEach(b => {
+                                    if (b.batsmanId === striker.id) {
+                                        if (b.extraType !== 'wide') balls++;
+                                        if (b.extraType !== 'bye' && b.extraType !== 'legBye' && b.extraType !== 'wide') {
+                                            runs += b.runs;
+                                            if (b.runs === 4) fours++;
+                                            if (b.runs === 6) sixes++;
+                                        }
+                                    }
+                                });
+                                const sr = balls > 0 ? ((runs / balls) * 100).toFixed(1) : '0.0';
+
+                                return (
+                                    <tr onClick={() => editPlayerName(battingTeam.id, striker.id, striker.name)} style={{ cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <td style={{ color: 'var(--accent-color)', fontWeight: 'bold', padding: '0.4rem 0' }}>{striker.name} *</td>
+                                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{runs}</td>
+                                        <td style={{ textAlign: 'center' }}>{balls}</td>
+                                        <td style={{ textAlign: 'center' }}>{fours}</td>
+                                        <td style={{ textAlign: 'center' }}>{sixes}</td>
+                                        <td style={{ textAlign: 'center' }}>{sr}</td>
+                                    </tr>
+                                );
+                            })()}
+                            {nonStriker && (() => {
+                                let runs = 0, balls = 0, fours = 0, sixes = 0;
+                                currentInning.balls.forEach(b => {
+                                    if (b.batsmanId === nonStriker.id) {
+                                        if (b.extraType !== 'wide') balls++;
+                                        if (b.extraType !== 'bye' && b.extraType !== 'legBye' && b.extraType !== 'wide') {
+                                            runs += b.runs;
+                                            if (b.runs === 4) fours++;
+                                            if (b.runs === 6) sixes++;
+                                        }
+                                    }
+                                });
+                                const sr = balls > 0 ? ((runs / balls) * 100).toFixed(1) : '0.0';
+
+                                return (
+                                    <tr onClick={() => editPlayerName(battingTeam.id, nonStriker.id, nonStriker.name)} style={{ cursor: 'pointer' }}>
+                                        <td style={{ color: 'var(--text-primary)', padding: '0.4rem 0' }}>{nonStriker.name}</td>
+                                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{runs}</td>
+                                        <td style={{ textAlign: 'center' }}>{balls}</td>
+                                        <td style={{ textAlign: 'center' }}>{fours}</td>
+                                        <td style={{ textAlign: 'center' }}>{sixes}</td>
+                                        <td style={{ textAlign: 'center' }}>{sr}</td>
+                                    </tr>
+                                );
+                            })()}
+                        </tbody>
+                    </table>
+
+                    {/* Bowler Table */}
+                    <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                <th style={{ textAlign: 'left', paddingBottom: '0.3rem' }}>Bowler</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>O</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>M</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>R</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>W</th>
+                                <th style={{ textAlign: 'center', paddingBottom: '0.3rem' }}>ER</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {bowler && (() => {
+                                let balls = 0, runs = 0, wickets = 0;
+                                currentInning.balls.forEach(b => {
+                                    if (b.bowlerId === bowler.id) {
+                                        if (b.isLegalDelivery) balls++;
+                                        if (b.extraType !== 'bye' && b.extraType !== 'legBye') runs += b.runs + b.extraRuns;
+                                        if (b.isWicket && b.wicketType !== 'runOut' && b.wicketType !== 'retiredHurt') wickets++;
+                                    }
+                                });
+                                const overs = Math.floor(balls / 6) + ((balls % 6) / 10);
+                                const er = balls > 0 ? (runs / (balls / 6)).toFixed(1) : '0.0';
+
+                                return (
+                                    <tr onClick={() => editPlayerName(bowlingTeam.id, bowler.id, bowler.name)} style={{ cursor: 'pointer' }}>
+                                        <td style={{ color: 'var(--text-primary)', padding: '0.4rem 0' }}>{bowler.name}</td>
+                                        <td style={{ textAlign: 'center' }}>{overs.toFixed(1)}</td>
+                                        <td style={{ textAlign: 'center' }}>0</td> {/* Maidens neglected for simplicity as in original code */}
+                                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{runs}</td>
+                                        <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--accent-color)' }}>{wickets}</td>
+                                        <td style={{ textAlign: 'center' }}>{er}</td>
+                                    </tr>
+                                );
+                            })()}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
