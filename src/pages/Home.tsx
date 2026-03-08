@@ -4,6 +4,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import type { Match } from '../types';
 import { calculateStandings } from '../utils/standingsUtils';
 import { StandingsTable } from '../components/StandingsTable';
+import { AdBanner } from '../components/AdBanner';
 
 export default function Home() {
     const navigate = useNavigate();
@@ -60,6 +61,8 @@ export default function Home() {
                     Privacy Policy
                 </button>
             </div>
+
+            <AdBanner dataAdSlot="1111111111" />
         </div>
     );
 }

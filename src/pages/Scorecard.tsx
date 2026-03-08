@@ -5,6 +5,7 @@ import type { Match } from '../types';
 import { ArrowLeft, Download, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { WagonWheel } from '../components/WagonWheel';
+import { AdBanner } from '../components/AdBanner';
 
 export default function Scorecard() {
     const { id } = useParams<{ id: string }>();
@@ -424,6 +425,10 @@ export default function Scorecard() {
                         {isExporting ? 'Exporting...' : <><Download size={20} style={{ marginRight: '0.5rem' }} /> Export as Image</>}
                     </button>
                 </div>
+            </div>
+
+            <div style={{ paddingBottom: '2rem' }}>
+                <AdBanner dataAdSlot="2222222222" />
             </div>
         </div>
     );
