@@ -1,0 +1,32 @@
+Absolutely! Here are the updated release details and store listing information tailored for the new name Crictrack. You can copy-paste these straight into your new Google Play Console draft!
+
+Release Details
+Release name:
+
+1.0 (Initial MVP)
+
+Release notes:
+
+Initial launch of Crictrack (MVP release)
+Added offline-first support for scoring local matches
+Built-in comprehensive match history and standings
+Easy match setup for 5, 10, 15, 20, and 50-over games
+Support for ball-by-ball tracking including extras (Wides, NB, Byes, Leg Byes)
+Exportable scorecards for easy sharing
+Store Listing Details (Main App Details)
+App Name:
+
+Crictrack
+
+Short Description:
+
+Offline, mobile-first local cricket scoring with ball-by-ball tracking.
+
+Full Description:
+
+Crictrack is your ultimate companion for tracking local cricket matches. Designed specifically with a sleek, dark-themed, mobile-first interface, it allows you to easily track ball-by-ball scores without needing an active internet connection.
+
+Features Include: • Offline Support: Score your matches anywhere, your data saves right to your local device. • Flexible Match Setup: Play short 5-over box cricket games up to full 50-over ODIs. • Comprehensive Scoring: Track runs, wides, no-balls, leg-byes, and detailed wicket types. • Smart Player Management: Easily manage striker rotation and substitute fielders. • Match History & Standings: Keep a permanent record of all your past games and tournaments. • Export Scorecards: Instantly generate and share beautiful match summaries with your team.
+
+Leave the pen and paper behind and bring your local games into the digital age with Crictrack!
+
