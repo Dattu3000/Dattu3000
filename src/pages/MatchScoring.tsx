@@ -515,7 +515,7 @@ export default function MatchScoring() {
                     <div className="card" style={{ width: '90%', maxWidth: '400px', textAlign: 'center' }}>
                         <h3 style={{ marginBottom: '1rem', color: 'var(--danger-color)' }}>How did the wicket fall?</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginBottom: '1rem' }}>
-                            {['Bowled', 'Caught', 'LBW', 'Run Out', 'Stumped', 'Hit Wicket'].map(wType => (
+                            {['Bowled', 'Caught', 'LBW', 'Run Out', 'Stumped', 'Hit Wicket', 'Retired Hurt'].map(wType => (
                                 <button key={wType} className="btn" onClick={() => {
                                     let wt: WicketType = 'bowled';
                                     if (wType === 'Caught') wt = 'caught';
@@ -523,6 +523,7 @@ export default function MatchScoring() {
                                     if (wType === 'Run Out') wt = 'runOut';
                                     if (wType === 'Stumped') wt = 'stumped';
                                     if (wType === 'Hit Wicket') wt = 'hitWicket';
+                                    if (wType === 'Retired Hurt') wt = 'retiredHurt';
 
                                     if (wt === 'caught' || wt === 'runOut' || wt === 'stumped') {
                                         setWicketFlow({ step: 'fielder', type: wt, runs: 0 });

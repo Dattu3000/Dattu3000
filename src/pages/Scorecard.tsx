@@ -196,6 +196,7 @@ export default function Scorecard() {
                                                             else if (b.wicketType === 'lbw') stat.dismissal = `lbw b ${bowlerName}`;
                                                             else if (b.wicketType === 'runOut') stat.dismissal = fielderStr ? `run out (${fielderStr})` : `run out`;
                                                             else if (b.wicketType === 'stumped') stat.dismissal = fielderStr ? `st ${fielderStr} b ${bowlerName}` : `stumped b ${bowlerName}`;
+                                                            else if (b.wicketType === 'retiredHurt') stat.dismissal = 'retired hurt';
                                                             else stat.dismissal = b.wicketType || 'Out';
                                                         }
                                                     });
@@ -278,7 +279,7 @@ export default function Scorecard() {
                                                             stat.runs += b.runs + b.extraRuns;
                                                         }
 
-                                                        if (b.isWicket && b.wicketType !== 'runOut') {
+                                                        if (b.isWicket && b.wicketType !== 'runOut' && b.wicketType !== 'retiredHurt') {
                                                             stat.wickets += 1;
                                                         }
                                                     });
