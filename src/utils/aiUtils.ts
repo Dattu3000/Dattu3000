@@ -1,4 +1,4 @@
-import axios from 'axios';
+
 
 const invokeUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
 const apiKey = "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";
