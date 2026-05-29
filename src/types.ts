@@ -5,6 +5,7 @@ export type TossDecision = 'bat' | 'bowl';
 export interface Player {
     id: string;
     name: string;
+    isSubstitute?: boolean;
 }
 
 export interface Team {

@@ -25,7 +25,7 @@ export default function Scorecard() {
             // Default: expand only the CURRENT inning
             setExpandedInnings([match.currentInning]);
         }
-    }, [match]);
+    }, [match, expandedInnings.length]);
 
     if (!match) return <div className="container">Loading...</div>;
 

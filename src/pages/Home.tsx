@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Trophy, History, PlusCircle } from 'lucide-react';
+import { Trophy, History, PlusCircle, User, LogIn } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import type { Match } from '../types';
 import { calculateStandings } from '../utils/standingsUtils';
@@ -8,7 +8,7 @@ import { AdBanner } from '../components/AdBanner';
 
 export default function Home() {
     const navigate = useNavigate();
-    const [matches, setMatches] = useLocalStorage<Match[]>('cricket-matches', []);
+    const [matches, setMatches] = useLocalStorage<Match[]>('cricket_matches', []);
 
     const standings = calculateStandings(matches);
 
@@ -41,10 +41,28 @@ export default function Home() {
                 <button
                     className="btn btn-secondary"
                     style={{ padding: '1.2rem', fontSize: '1.2rem' }}
+                    onClick={() => navigate('/login')}
+                >
+                    <LogIn size={24} />
+                    Login / Authenticate
+                </button>
+
+                <button
+                    className="btn btn-secondary"
+                    style={{ padding: '1.2rem', fontSize: '1.2rem' }}
                     onClick={() => navigate('/history')}
                 >
                     <History size={24} />
                     Match History
+                </button>
+
+                <button
+                    className="btn btn-secondary"
+                    style={{ padding: '1.2rem', fontSize: '1.2rem' }}
+                    onClick={() => navigate('/profile')}
+                >
+                    <User size={24} />
+                    User Stats & Profile
                 </button>
             </div>
 

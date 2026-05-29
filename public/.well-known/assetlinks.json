@@ -1,14 +1,14 @@
 [
-    {
-        "relation": [
-            "delegate_permission/common.handle_all_urls"
-        ],
-        "target": {
-            "namespace": "android_app",
-            "package_name": "com.cricket.scorer",
-            "sha256_cert_fingerprints": [
-                "YOUR_PLAY_CONSOLE_SHA256_FINGERPRINT_HERE"
-            ]
-        }
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.crictrack.app",
+      "sha256_cert_fingerprints": [
+        "D6:B8:2E:89:27:0A:09:07:A9:52:A2:15:1A:F0:BD:83:0B:53:EF:1A:D9:F8:B0:77:DA:CF:45:66:BA:B4:3B:B2"
+      ]
     }
+  }
 ]

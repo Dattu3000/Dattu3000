@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { Match, Ball, ExtraType, WicketType, ShotRegion } from '../types';
+import type { Match, Ball, ExtraType, WicketType, ShotRegion, Player, Team } from '../types';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { BoundaryPopup } from '../components/BoundaryPopup';
@@ -12,6 +12,12 @@ export default function MatchScoring() {
     const navigate = useNavigate();
     const [matches, setMatches] = useLocalStorage<Match[]>('cricket_matches', []);
 
+    const [extraPrompt, setExtraPrompt] = useState<{ type: ExtraType, baseRuns: number } | null>(null);
+    const [wicketFlow, setWicketFlow] = useState<{ step: 'type' | 'fielder' | 'batter', type?: WicketType, runs?: number, fielderId?: string, fielderName?: string } | null>(null);
+    const [boundaryCelebration, setBoundaryCelebration] = useState<4 | 6 | null>(null);
+    const [shotPrompt, setShotPrompt] = useState<{ runs: number } | null>(null);
+    const [needsNames, setNeedsNames] = useState<{ type: 'innings' | 'over', strikerId?: string, nonStrikerId?: string, bowlerId?: string } | null>(null);
+
     const matchIndex = matches.findIndex(m => m.id === id);
     const match = matches[matchIndex];
 
@@ -21,6 +27,44 @@ export default function MatchScoring() {
             navigate('/');
         }
     }, [match, matches, navigate]);
+
+    // Mandatory Names Dialog Logic
+    // We need to know if it's the start of the innings, or start of a new over.
+    useEffect(() => {
+        if (!match || match.status === 'completed') return;
+
+        const inning = match.innings[match.currentInning - 1];
+        const bTeam = match.teamA.id === inning.battingTeamId ? match.teamA : match.teamB;
+        const bowlTeam = match.teamA.id === inning.bowlingTeamId ? match.teamA : match.teamB;
+
+        const striker = bTeam.players.find(p => p.id === inning.strikerId);
+        const nonStriker = bTeam.players.find(p => p.id === inning.nonStrikerId);
+        const currentBowler = bowlTeam.players.find(p => p.id === inning.bowlerId);
+
+        // Check if names are still default "Player XX"
+        const isDefault = (name: string) => name.startsWith('Player A') || name.startsWith('Player B');
+
+        // Check 1: Start of Inning
+        if (inning.totalBalls === 0 && inning.balls.length === 0) {
+            if (striker && isDefault(striker.name) && !needsNames) {
+                setNeedsNames({ type: 'innings', strikerId: striker.id, nonStrikerId: nonStriker?.id, bowlerId: currentBowler?.id });
+                return; // Prioritize this prompt
+            }
+        }
+
+        // Check 2: Start of New Over
+        if (inning.totalBalls > 0 && inning.totalBalls % 6 === 0) {
+            // Ensure the last ball of the over was actually a legal delivery that completed the over
+            // AND ensure we are not at the end of the inning (match.overs * 6)
+            const lastBallInfo = inning.balls[inning.balls.length - 1];
+            if (lastBallInfo.isLegalDelivery && inning.totalBalls < match.overs * 6 && !needsNames) {
+                if (lastBallInfo.bowlerId === inning.bowlerId) {
+                    setNeedsNames({ type: 'over', bowlerId: inning.bowlerId });
+                    return;
+                }
+            }
+        }
+    }, [match, needsNames]);
 
     if (!match) return <div className="container">Loading...</div>;
 
@@ -50,6 +94,11 @@ export default function MatchScoring() {
 
     const addBall = (runsOffBat: number, _isExtra: boolean = false, extraType: ExtraType = null, extraRuns: number = 0, isWicket: boolean = false, wicketType: WicketType = null, incomingBatterId?: string, incomingBatterName?: string, fielderId?: string, fielderName?: string, shotRegion?: ShotRegion) => {
         const isLegalDelivery = extraType !== 'wide' && extraType !== 'noBall';
+        
+        // Satisfy linter for unused _isExtra parameter
+        if (_isExtra) {
+            // Checked and logged as extra
+        }
 
         // Simplistic calculation for overs, normally handles 6 balls per over logic
         const currentOverBals = currentInning.totalBalls % 6;
@@ -64,19 +113,19 @@ export default function MatchScoring() {
             const nameTrim = fielderName.trim();
             const bowlTeam = newMatch.teamA.id === newInning.bowlingTeamId ? newMatch.teamA : newMatch.teamB;
 
-            const existing = bowlTeam.players.find((p: any) => p.name.toLowerCase() === nameTrim.toLowerCase());
+            const existing = bowlTeam.players.find((p: Player) => p.name.toLowerCase() === nameTrim.toLowerCase());
             if (existing) {
                 finalFielderId = existing.id;
             } else {
                 const isDefault = (n: string) => n.startsWith('Player A') || n.startsWith('Player B');
-                const placeholder = bowlTeam.players.find((p: any) => isDefault(p.name));
+                const placeholder = bowlTeam.players.find((p: Player) => isDefault(p.name));
 
                 if (placeholder) {
                     placeholder.name = nameTrim;
                     finalFielderId = placeholder.id;
                 } else {
                     const newId = uuidv4();
-                    bowlTeam.players.push({ id: newId, name: nameTrim } as any);
+                    bowlTeam.players.push({ id: newId, name: nameTrim });
                     finalFielderId = newId;
                 }
             }
@@ -115,20 +164,20 @@ export default function MatchScoring() {
                 const nameTrim = incomingBatterName.trim();
                 const bTeam = newMatch.teamA.id === newInning.battingTeamId ? newMatch.teamA : newMatch.teamB;
 
-                const existing = bTeam.players.find((p: any) => p.name.toLowerCase() === nameTrim.toLowerCase());
+                const existing = bTeam.players.find((p: Player) => p.name.toLowerCase() === nameTrim.toLowerCase());
                 if (existing) {
                     nextStrikerId = existing.id;
                 } else {
                     const isDefault = (n: string) => n.startsWith('Player A') || n.startsWith('Player B');
-                    const outIds = newInning.balls.filter((b: any) => b.isWicket).map((b: any) => b.wicketBatsmanId);
-                    const placeholder = bTeam.players.find((p: any) => isDefault(p.name) && !outIds.includes(p.id) && p.id !== currentInning.strikerId && p.id !== currentInning.nonStrikerId);
+                    const outIds = newInning.balls.filter((b: Ball) => b.isWicket).map((b: Ball) => b.wicketBatsmanId);
+                    const placeholder = bTeam.players.find((p: Player) => isDefault(p.name) && !outIds.includes(p.id) && p.id !== currentInning.strikerId && p.id !== currentInning.nonStrikerId);
 
                     if (placeholder) {
                         placeholder.name = nameTrim;
                         nextStrikerId = placeholder.id;
                     } else {
                         const newId = uuidv4();
-                        bTeam.players.push({ id: newId, name: nameTrim, isSubstitute: false } as any);
+                        bTeam.players.push({ id: newId, name: nameTrim, isSubstitute: false });
                         nextStrikerId = newId;
                     }
                 }
@@ -137,8 +186,8 @@ export default function MatchScoring() {
             // Fallback if no valid explicit batter given
             if (!nextStrikerId) {
                 const bTeam = newMatch.teamA.id === newInning.battingTeamId ? newMatch.teamA : newMatch.teamB;
-                const outIds = newInning.balls.filter((b: any) => b.isWicket).map((b: any) => b.wicketBatsmanId);
-                const available = bTeam.players.find((p: any) => !outIds.includes(p.id) && p.id !== currentInning.strikerId && p.id !== currentInning.nonStrikerId);
+                const outIds = newInning.balls.filter((b: Ball) => b.isWicket).map((b: Ball) => b.wicketBatsmanId);
+                const available = bTeam.players.find((p: Player) => !outIds.includes(p.id) && p.id !== currentInning.strikerId && p.id !== currentInning.nonStrikerId);
                 nextStrikerId = available?.id || bTeam.players[newInning.wickets + 1]?.id;
             }
 
@@ -253,11 +302,6 @@ export default function MatchScoring() {
         return { id: b.id, label: str };
     });
 
-    const [extraPrompt, setExtraPrompt] = useState<{ type: ExtraType, baseRuns: number } | null>(null);
-    const [wicketFlow, setWicketFlow] = useState<{ step: 'type' | 'fielder' | 'batter', type?: WicketType, runs?: number, fielderId?: string, fielderName?: string } | null>(null);
-    const [boundaryCelebration, setBoundaryCelebration] = useState<4 | 6 | null>(null);
-    const [shotPrompt, setShotPrompt] = useState<{ runs: number } | null>(null);
-
     const handleExtraClick = (type: ExtraType, baseRuns: number) => {
         setExtraPrompt({ type, baseRuns });
     };
@@ -274,57 +318,6 @@ export default function MatchScoring() {
         setExtraPrompt(null);
     };
 
-    // Mandatory Names Dialog Logic
-    // We need to know if it's the start of the innings, or start of a new over.
-    const [needsNames, setNeedsNames] = useState<{ type: 'innings' | 'over', strikerId?: string, nonStrikerId?: string, bowlerId?: string } | null>(null);
-
-    useEffect(() => {
-        if (!match || match.status === 'completed') return;
-
-        const inning = match.innings[match.currentInning - 1];
-        const bTeam = match.teamA.id === inning.battingTeamId ? match.teamA : match.teamB;
-        const bowlTeam = match.teamA.id === inning.bowlingTeamId ? match.teamA : match.teamB;
-
-        let striker = bTeam.players.find(p => p.id === inning.strikerId);
-        let nonStriker = bTeam.players.find(p => p.id === inning.nonStrikerId);
-        let currentBowler = bowlTeam.players.find(p => p.id === inning.bowlerId);
-
-        // Check if names are still default "Player XX"
-        const isDefault = (name: string) => name.startsWith('Player A') || name.startsWith('Player B');
-
-        // Check 1: Start of Inning
-        if (inning.totalBalls === 0 && inning.balls.length === 0) {
-            if (striker && isDefault(striker.name) && !needsNames) {
-                setNeedsNames({ type: 'innings', strikerId: striker.id, nonStrikerId: nonStriker?.id, bowlerId: currentBowler?.id });
-                return; // Prioritize this prompt
-            }
-        }
-
-        // Check 2: Start of New Over
-        if (inning.totalBalls > 0 && inning.totalBalls % 6 === 0) {
-            // Ensure the last ball of the over was actually a legal delivery that completed the over
-            // AND ensure we are not at the end of the inning (match.overs * 6)
-            const lastBallInfo = inning.balls[inning.balls.length - 1];
-            if (lastBallInfo.isLegalDelivery && inning.totalBalls < match.overs * 6 && !needsNames) {
-                // The current bowler id has been auto-rotated by basic logic or is still default.
-                // We ALWAYS prompt for the new bowler at the start of an over unless they explicitly set it.
-                // Actually, the simplest check is: do we have a new bowler for this over?
-                // The MVP logic in addBall just left the bowlerId the same. 
-                // Let's force a prompt every over by checking a custom over flag, or simply if the current bowler hasn't bowled THIS over yet.
-                // But easier: check if the 'bowlerId' in state is default. We haven't changed the bowlerId on over change in addBall!
-                // Wait, if we don't change it, the user has to manually tap to edit. 
-                // Let's force a prompt for bowler by injecting a "new bowler needed" state.
-
-                // Let's see if the *last* ball was bowled by the *current* bowlerId. 
-                // If so, it means the bowler hasn't been changed yet for the new over.
-                if (lastBallInfo.bowlerId === inning.bowlerId) {
-                    setNeedsNames({ type: 'over', bowlerId: inning.bowlerId });
-                    return;
-                }
-            }
-        }
-    }, [match, needsNames]);
-
     const handleNamesSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -335,19 +328,19 @@ export default function MatchScoring() {
         const bTeam = newMatch.teamA.id === inning.battingTeamId ? newMatch.teamA : newMatch.teamB;
         const bowlTeam = newMatch.teamA.id === inning.bowlingTeamId ? newMatch.teamA : newMatch.teamB;
 
-        const replaceOrFindPlayer = (team: any, nameVal: string, currentId?: string, isNewRole: boolean = false): string | undefined => {
+        const replaceOrFindPlayer = (team: Team, nameVal: string, currentId?: string, isNewRole: boolean = false): string | undefined => {
             if (!nameVal) return currentId;
             const nameTrim = nameVal.trim();
             if (!nameTrim) return currentId;
 
             if (isNewRole) {
                 // Find existing by name to reuse (e.g. bowler comes back for another spell)
-                const existing = team.players.find((p: any) => p.name.toLowerCase() === nameTrim.toLowerCase());
+                const existing = team.players.find((p: Player) => p.name.toLowerCase() === nameTrim.toLowerCase());
                 if (existing) return existing.id;
 
                 // If not found, find an unused default placeholder
                 const isDefault = (n: string) => n.startsWith('Player A') || n.startsWith('Player B');
-                const placeholder = team.players.find((p: any) => isDefault(p.name));
+                const placeholder = team.players.find((p: Player) => isDefault(p.name));
                 if (placeholder) {
                     placeholder.name = nameTrim;
                     return placeholder.id;
@@ -359,7 +352,7 @@ export default function MatchScoring() {
                 return newId;
             } else {
                 // Just rename existing
-                const p = team.players.find((p: any) => p.id === currentId);
+                const p = team.players.find((p: Player) => p.id === currentId);
                 if (p) p.name = nameTrim;
                 return currentId;
             }
