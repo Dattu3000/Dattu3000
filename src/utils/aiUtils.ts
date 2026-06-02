@@ -1,6 +1,6 @@
 
 
-const invokeUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
+const invokeUrl = "/api/ai/v1/chat/completions";
 const apiKey = import.meta.env.VITE_NVIDIA_API_KEY || "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";
 
 export const getAIResponse = async (prompt: string, onChunk: (text: string) => void) => {
