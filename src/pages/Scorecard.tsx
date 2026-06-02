@@ -1,20 +1,25 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { Match } from '../types';
-import { ArrowLeft, Download, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/database';
+import { ArrowLeft, Download, ChevronDown, ChevronUp, Trophy, Sparkles } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { WagonWheel } from '../components/WagonWheel';
 import { AdBanner } from '../components/AdBanner';
+import { PlayerCard } from '../components/PlayerCard';
+import { calculatePlayerStats } from '../utils/statsUtils';
+import { AIInsights } from '../components/AIInsights';
 
 export default function Scorecard() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [matches] = useLocalStorage<Match[]>('cricket_matches', []);
+    const matches = useLiveQuery(() => db.matches.toArray()) || [];
     const scorecardRef = useRef<HTMLDivElement>(null);
     const [expandedInnings, setExpandedInnings] = useState<number[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [selectedBatsmanId, setSelectedBatsmanId] = useState<string | null>(null);
+    const [showAIInsights, setShowAIInsights] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState('');
 
     const matchIndex = matches.findIndex(m => m.id === id);
     const match = matches[matchIndex];
@@ -144,6 +149,38 @@ export default function Scorecard() {
     };
 
     const getTeamName = (teamId: string) => teamId === match.teamA.id ? match.teamA.name : match.teamB.name;
+
+    const handleAIGenerate = () => {
+        let prompt = `You are an exciting, passionate cricket commentator like Harsha Bhogle or Ian Smith. Write a thrilling post-match summary for the following match. Make it sound like a live broadcast wrap-up. Use 2-3 short paragraphs.\n\n`;
+        prompt += `Match Name: ${match.name}\n`;
+        prompt += `Toss: ${getTeamName(match.tossWinnerId!)} won the toss and elected to ${match.tossDecision}.\n\n`;
+        
+        match.innings.forEach((inning, idx) => {
+            if (inning.teamId === '') return;
+            const battingTeamName = getTeamName(inning.battingTeamId);
+            prompt += `Innings ${idx + 1}: ${battingTeamName} scored ${inning.score}/${inning.wickets} in ${inning.oversCompleted.toFixed(1)} overs.\n`;
+        });
+        
+        const mvp = calculateMVP();
+        if (mvp) {
+            prompt += `\nPlayer of the Match: ${mvp.name} with ${mvp.runs} runs and ${mvp.wickets} wickets.\n`;
+        }
+        
+        let result = "";
+        if (match.status === 'completed') {
+            if (match.innings[1] && match.innings[1].score > match.innings[0].score) {
+                result = `${getTeamName(match.innings[1].battingTeamId)} won the match!`;
+            } else if (match.innings[1] && match.innings[1].score < match.innings[0].score) {
+                result = `${getTeamName(match.innings[0].battingTeamId)} won the match!`;
+            } else {
+                result = `The match was a tie!`;
+            }
+            prompt += `\nResult: ${result}\n`;
+        }
+
+        setAiPrompt(prompt);
+        setShowAIInsights(true);
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -401,31 +438,38 @@ export default function Scorecard() {
                                         ` • ${getTeamName(match.innings[1].battingTeamId)} Won` :
                                         ` • ${getTeamName(match.innings[0].battingTeamId)} Won`}
                                 </div>
-                                {mvp && (
-                                    <div style={{ padding: '1rem', background: 'rgba(247, 127, 0, 0.1)', borderRadius: '12px', border: '1px solid rgba(247, 127, 0, 0.3)', display: 'inline-block', minWidth: '80%' }}>
-                                        <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                            <Trophy size={18} /> Player of the Match
+                                {mvp && (() => {
+                                    const mvpStats = calculatePlayerStats(matches, mvp.name);
+                                    const mvpDetails = `${mvp.runs} R, ${mvp.wickets} W • ${mvp.points} Impact Pts`;
+                                    return (
+                                        <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                            <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', fontSize: '1rem', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                                <Trophy size={20} /> Player of the Match
+                                            </div>
+                                            <PlayerCard stats={mvpStats} isMVP={true} mvpDetails={mvpDetails} />
                                         </div>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{mvp.name}</div>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
-                                            {mvp.runs > 0 && `${mvp.runs} Runs`}
-                                            {mvp.runs > 0 && mvp.wickets > 0 && ' & '}
-                                            {mvp.wickets > 0 && `${mvp.wickets} Wickets`}
-                                            {mvp.runs === 0 && mvp.wickets === 0 && `${mvp.points} Impact Pts`}
-                                        </div>
-                                    </div>
-                                )}
+                                    );
+                                })()}
                             </div>
                         );
                     })()}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', padding: '1rem' }}>
                     <button className="btn" onClick={handleShare} disabled={isExporting} style={{ maxWidth: '300px' }}>
                         {isExporting ? 'Exporting...' : <><Download size={20} style={{ marginRight: '0.5rem' }} /> Export as Image</>}
                     </button>
+                    {match.status === 'completed' && (
+                        <button className="btn" onClick={handleAIGenerate} style={{ maxWidth: '300px', background: 'var(--accent-color)', color: 'var(--bg-color)' }}>
+                            <Sparkles size={20} style={{ marginRight: '0.5rem' }} /> AI Match Report
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {showAIInsights && (
+                <AIInsights prompt={aiPrompt} onClose={() => setShowAIInsights(false)} />
+            )}
 
             <div style={{ paddingBottom: '2rem' }}>
                 <AdBanner dataAdSlot="2222222222" />

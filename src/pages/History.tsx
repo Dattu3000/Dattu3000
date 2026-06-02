@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { Match } from '../types';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/database';
 import { ArrowLeft, Clock } from 'lucide-react';
 
 export default function History() {
     const navigate = useNavigate();
-    const [matches] = useLocalStorage<Match[]>('cricket_matches', []);
+    const matches = useLiveQuery(() => db.matches.toArray()) || [];
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>

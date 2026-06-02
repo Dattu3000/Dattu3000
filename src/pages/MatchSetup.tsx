@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import type { Match, Team, TossDecision } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { db } from '../db/database';
 import { ArrowLeft } from 'lucide-react';
 
 export default function MatchSetup() {
     const navigate = useNavigate();
-    const [matches, setMatches] = useLocalStorage<Match[]>('cricket_matches', []);
 
     const [teamAName, setTeamAName] = useState('');
     const [teamBName, setTeamBName] = useState('');
@@ -16,7 +15,7 @@ export default function MatchSetup() {
     const [tossWinner, setTossWinner] = useState<'A' | 'B' | null>(null);
     const [tossDecision, setTossDecision] = useState<TossDecision | null>(null);
 
-    const startMatch = () => {
+    const startMatch = async () => {
         if (!teamAName || !teamBName || !overs || !tossWinner || !tossDecision) {
             alert("Please fill all fields to start the match");
             return;
@@ -91,7 +90,7 @@ export default function MatchSetup() {
             ]
         };
 
-        setMatches([...matches, newMatch]);
+        await db.matches.add(newMatch);
         navigate(`/match/${newMatch.id}`);
     };
 

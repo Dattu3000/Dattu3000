@@ -1,19 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { Trophy, History, PlusCircle, User, LogIn } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { Match } from '../types';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/database';
 import { calculateStandings } from '../utils/standingsUtils';
 import { StandingsTable } from '../components/StandingsTable';
 import { AdBanner } from '../components/AdBanner';
 
 export default function Home() {
     const navigate = useNavigate();
-    const [matches, setMatches] = useLocalStorage<Match[]>('cricket_matches', []);
+    const matches = useLiveQuery(() => db.matches.toArray()) || [];
 
     const standings = calculateStandings(matches);
 
-    const handleClearHistory = () => {
-        setMatches([]);
+    const handleClearHistory = async () => {
+        await db.matches.clear();
     };
 
     return (

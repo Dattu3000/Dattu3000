@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { Match } from '../types';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/database';
 import { ArrowLeft, User, LogOut, Award, Activity, BarChart2, CheckCircle } from 'lucide-react';
 import { calculatePlayerStats, getAllPlayerNames } from '../utils/statsUtils';
+import { PlayerCard } from '../components/PlayerCard';
 
 interface GoogleUser {
     name: string;
@@ -47,9 +49,9 @@ const decodeJwt = (token: string) => {
 
 export default function Profile() {
     const navigate = useNavigate();
-    const [matches] = useLocalStorage<Match[]>('cricket_matches', []);
+    const matches = useLiveQuery(() => db.matches.toArray()) || [];
     const [googleUser, setGoogleUser] = useLocalStorage<GoogleUser | null>('google_user', null);
-    const [activeTab, setActiveTab] = useState<'overview' | 'batting' | 'bowling' | 'fielding'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'batting' | 'bowling' | 'fielding' | 'card'>('overview');
 
     const playerNamesList = getAllPlayerNames(matches);
 
@@ -223,7 +225,7 @@ export default function Profile() {
                     <>
                         {/* Tab Switcher */}
                         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-                            {(['overview', 'batting', 'bowling', 'fielding'] as const).map(tab => (
+                            {(['overview', 'batting', 'bowling', 'fielding', 'card'] as const).map(tab => (
                                 <button
                                     key={tab}
                                     className={`btn ${activeTab === tab ? '' : 'btn-secondary'}`}
@@ -236,8 +238,16 @@ export default function Profile() {
                         </div>
 
                         {/* Stats Dashboard */}
-                        <div className="card" style={{ padding: '1.5rem 1.25rem' }}>
-                            {activeTab === 'overview' && (
+                        {activeTab === 'card' ? (
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
+                                <PlayerCard 
+                                    stats={stats} 
+                                    imageUrl={googleUser?.name === selectedPlayerName ? googleUser.picture : undefined}
+                                />
+                            </div>
+                        ) : (
+                            <div className="card" style={{ padding: '1.5rem 1.25rem' }}>
+                                {activeTab === 'overview' && (
                                 <div>
                                     <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <Award size={18} color="var(--accent-color)" /> Career Overview
@@ -372,6 +382,7 @@ export default function Profile() {
                                 </div>
                             )}
                         </div>
+                        )}
                     </>
                 )}
             </div>

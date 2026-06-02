@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useOptimistic } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db, queueSyncEvent } from '../db/database';
+import axios from 'axios';
 import type { Match, Ball, ExtraType, WicketType, ShotRegion, Player, Team } from '../types';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,7 +12,30 @@ import { FieldGraphic } from '../components/FieldGraphic';
 export default function MatchScoring() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [matches, setMatches] = useLocalStorage<Match[]>('cricket_matches', []);
+
+    const dbMatches = useLiveQuery(() => db.matches.toArray()) || [];
+    
+    const [matches, setOptimisticMatches] = useOptimistic(
+        dbMatches,
+        (state, newMatch: Match) => {
+            const newState = [...state];
+            const idx = newState.findIndex(m => m.id === newMatch.id);
+            if (idx >= 0) newState[idx] = newMatch;
+            else newState.push(newMatch);
+            return newState;
+        }
+    );
+
+    const setMatches = async (_newMatchesArray: Match[], updatedMatch: Match) => {
+        setOptimisticMatches(updatedMatch);
+        await db.matches.put(updatedMatch);
+        try {
+            await axios.post('/api/sync', updatedMatch);
+        } catch (err) {
+            console.log('Network sync failed, queued via service worker');
+            await queueSyncEvent(updatedMatch.id, 'update', updatedMatch);
+        }
+    };
 
     const [extraPrompt, setExtraPrompt] = useState<{ type: ExtraType, baseRuns: number } | null>(null);
     const [wicketFlow, setWicketFlow] = useState<{ step: 'type' | 'fielder' | 'batter', type?: WicketType, runs?: number, fielderId?: string, fielderName?: string } | null>(null);
@@ -88,7 +113,7 @@ export default function MatchScoring() {
         if (playerIndex >= 0) {
             teamToEdit.players[playerIndex].name = newName.trim();
             newMatches[matchIndex] = newMatch;
-            setMatches(newMatches);
+            setMatches(newMatches, newMatch);
         }
     };
 
@@ -243,7 +268,7 @@ export default function MatchScoring() {
         newMatch.currentInning = newCurrentInning;
 
         newMatches[matchIndex] = newMatch;
-        setMatches(newMatches);
+        setMatches(newMatches, newMatch);
 
         if (!isWicket && (runsOffBat === 4 || runsOffBat === 6)) {
             setBoundaryCelebration(runsOffBat as 4 | 6);
@@ -265,7 +290,7 @@ export default function MatchScoring() {
 
         newMatch.innings[match.currentInning - 1] = newInning;
         newMatches[matchIndex] = newMatch;
-        setMatches(newMatches);
+        setMatches(newMatches, newMatch);
     };
 
     const currentRunRate = currentInning.totalBalls > 0
@@ -368,7 +393,7 @@ export default function MatchScoring() {
         }
 
         newMatches[matchIndex] = newMatch;
-        setMatches(newMatches);
+        setMatches(newMatches, newMatch);
         setNeedsNames(null);
     };
 
