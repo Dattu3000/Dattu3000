@@ -7,8 +7,8 @@ interface WagonWheelProps {
 }
 
 export const WagonWheel: React.FC<WagonWheelProps> = ({ balls, batsmanId }) => {
-    // Filter balls for this specific batsman that have runs off the bat > 0 and a shotRegion
-    const scoringShots = balls.filter(b => b.batsmanId === batsmanId && b.runs > 0 && b.shotRegion);
+    // Filter balls for this specific batsman that have runs off the bat > 0 and a shotRegion or shotX
+    const scoringShots = balls.filter(b => b.batsmanId === batsmanId && b.runs > 0 && (b.shotRegion || (b.shotX !== undefined && b.shotY !== undefined)));
 
     if (scoringShots.length === 0) {
         return (
@@ -70,19 +70,23 @@ export const WagonWheel: React.FC<WagonWheelProps> = ({ balls, batsmanId }) => {
 
                 {/* Plot the shots */}
                 {scoringShots.map((shot, idx) => {
-                    const angleDeg = regionAngles[shot.shotRegion as string] || 0;
+                    let x2 = 100;
+                    let y2 = 100;
 
-                    // Add slight random jitter to angle (-10 to +10 degrees) so lines don't perfectly overlap
-                    // Seed the random based on the ball ID so it doesn't flicker on re-renders ideally,
-                    // but for simplicity math.random is okay for this lightweight visual
-                    const pseudoRandom = (parseInt(shot.id.replace(/\D/g, '').slice(0, 5)) % 20) - 10 || 0;
-                    const finalAngleDeg = angleDeg + pseudoRandom;
-
-                    const angleRad = (finalAngleDeg - 90) * (Math.PI / 180); // SVG 0 is East, so subtract 90 to make 0 North
-
-                    const length = getLineLength(shot.runs);
-                    const x2 = 100 + (length * Math.cos(angleRad));
-                    const y2 = 100 + (length * Math.sin(angleRad));
+                    if (shot.shotX !== undefined && shot.shotY !== undefined) {
+                        // Use explicit coordinates (0 to 1 relative to field)
+                        x2 = shot.shotX * 200;
+                        y2 = shot.shotY * 200;
+                    } else {
+                        // Fallback to legacy angle logic based on region
+                        const angleDeg = regionAngles[shot.shotRegion as string] || 0;
+                        const pseudoRandom = (parseInt(shot.id.replace(/\D/g, '').slice(0, 5)) % 20) - 10 || 0;
+                        const finalAngleDeg = angleDeg + pseudoRandom;
+                        const angleRad = (finalAngleDeg - 90) * (Math.PI / 180); 
+                        const length = getLineLength(shot.runs);
+                        x2 = 100 + (length * Math.cos(angleRad));
+                        y2 = 100 + (length * Math.sin(angleRad));
+                    }
 
                     return (
                         <line

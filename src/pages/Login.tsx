@@ -22,6 +22,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     // Dummy login logic
     if (email && password) {
+      localStorage.setItem('is_authenticated', 'true');
       navigate('/');
     }
   };

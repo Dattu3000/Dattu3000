@@ -1,16 +1,34 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import type { Match, Team, TossDecision } from '../types';
+import type { Match, Team, TossDecision, Tournament } from '../types';
 import { db } from '../db/database';
 import { ArrowLeft } from 'lucide-react';
 
 export default function MatchSetup() {
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Parse tournamentId from query string if present
+    const searchParams = new URLSearchParams(location.search);
+    const tournamentId = searchParams.get('tournamentId');
+    const [tournament, setTournament] = useState<Tournament | null>(null);
+
+    useEffect(() => {
+        if (tournamentId) {
+            db.tournaments.get(tournamentId).then(t => {
+                if (t) setTournament(t);
+            });
+        }
+    }, [tournamentId]);
 
     const [teamAName, setTeamAName] = useState('');
     const [teamBName, setTeamBName] = useState('');
+    const [teamAColor, setTeamAColor] = useState('#3b82f6');
+    const [teamBColor, setTeamBColor] = useState('#ef4444');
     const [overs, setOvers] = useState<number>(20);
+
+    const TEAM_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
     const [tossWinner, setTossWinner] = useState<'A' | 'B' | null>(null);
     const [tossDecision, setTossDecision] = useState<TossDecision | null>(null);
@@ -24,12 +42,14 @@ export default function MatchSetup() {
         const teamA: Team = {
             id: uuidv4(),
             name: teamAName,
+            color: teamAColor,
             players: Array.from({ length: 11 }).map((_, i) => ({ id: uuidv4(), name: `Player A${i + 1}` })) // placeholder players for MVP speed
         };
 
         const teamB: Team = {
             id: uuidv4(),
             name: teamBName,
+            color: teamBColor,
             players: Array.from({ length: 11 }).map((_, i) => ({ id: uuidv4(), name: `Player B${i + 1}` }))
         };
 
@@ -51,6 +71,7 @@ export default function MatchSetup() {
 
         const newMatch: Match = {
             id: uuidv4(),
+            tournamentId: tournamentId || undefined,
             name: `${teamAName} vs ${teamBName}`,
             date: Date.now(),
             teamA,
@@ -107,6 +128,13 @@ export default function MatchSetup() {
             </div>
 
             <div className="container">
+                {tournament && (
+                    <div className="card" style={{ padding: '1rem', backgroundColor: 'var(--card-bg)' }}>
+                        <p style={{ margin: 0, color: 'var(--accent-color)', fontWeight: 'bold' }}>Tournament: {tournament.name}</p>
+                        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Tip: Use exactly the names "{tournament.teams[0]?.name}" etc. to link points.</p>
+                    </div>
+                )}
+
                 <div className="card">
                     <div className="form-group">
                         <label className="form-label">Team A Name</label>
@@ -116,6 +144,15 @@ export default function MatchSetup() {
                             value={teamAName}
                             onChange={e => setTeamAName(e.target.value)}
                         />
+                        <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {TEAM_COLORS.map(c => (
+                                <div 
+                                    key={`A-${c}`} 
+                                    onClick={() => setTeamAColor(c)}
+                                    style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: c, cursor: 'pointer', border: teamAColor === c ? '2px solid white' : '2px solid transparent' }} 
+                                />
+                            ))}
+                        </div>
                     </div>
 
                     <div className="form-group" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>VS</div>
@@ -128,6 +165,15 @@ export default function MatchSetup() {
                             value={teamBName}
                             onChange={e => setTeamBName(e.target.value)}
                         />
+                        <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {TEAM_COLORS.map(c => (
+                                <div 
+                                    key={`B-${c}`} 
+                                    onClick={() => setTeamBColor(c)}
+                                    style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: c, cursor: 'pointer', border: teamBColor === c ? '2px solid white' : '2px solid transparent' }} 
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
 

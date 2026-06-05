@@ -1,7 +1,7 @@
 
 
 const invokeUrl = "/api/ai/v1/chat/completions";
-const apiKey = import.meta.env.VITE_NVIDIA_API_KEY || "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";
+const apiKey = import.meta.env.VITE_NVIDIA_API_KEY || "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";
 
 export const getAIResponse = async (prompt: string, onChunk: (text: string) => void) => {
   const headers = {
@@ -11,13 +11,13 @@ export const getAIResponse = async (prompt: string, onChunk: (text: string) => v
   };
 
   const payload = {
-    "model": "google/gemma-3n-e4b-it",
+    "model": "nvidia/nemotron-3-ultra-550b-a55b",
     "messages": [{"role": "user", "content": prompt}],
-    "max_tokens": 512,
-    "temperature": 0.20,
-    "top_p": 0.70,
-    "frequency_penalty": 0.00,
-    "presence_penalty": 0.00,
+    "temperature": 1,
+    "top_p": 0.95,
+    "max_tokens": 16384,
+    "chat_template_kwargs": { "enable_thinking": true },
+    "reasoning_budget": 16384,
     "stream": true
   };
 
@@ -46,8 +46,16 @@ export const getAIResponse = async (prompt: string, onChunk: (text: string) => v
           if (dataStr === '[DONE]') break;
           try {
             const data = JSON.parse(dataStr);
-            if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
-              onChunk(data.choices[0].delta.content);
+            const delta = data.choices[0].delta;
+            if (delta) {
+              if (delta.reasoning_content) {
+                // Wrap reasoning content in a distinct styling if possible, or just append it.
+                // We'll just stream it directly as text to keep it simple, since the UI expects raw text.
+                onChunk(delta.reasoning_content);
+              }
+              if (delta.content) {
+                onChunk(delta.content);
+              }
             }
           } catch (e) {
             console.error("Error parsing chunk", e, dataStr);

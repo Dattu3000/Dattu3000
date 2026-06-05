@@ -11,6 +11,7 @@ export interface Player {
 export interface Team {
     id: string;
     name: string;
+    color?: string;
     players: Player[];
 }
 
@@ -33,6 +34,8 @@ export interface Ball {
     wicketBatsmanId: string | null; // Who got out
     fielderId?: string;
     shotRegion?: ShotRegion;
+    shotX?: number;
+    shotY?: number;
     timestamp: number;
     isLegalDelivery: boolean;
 }
@@ -53,6 +56,7 @@ export interface Inning {
 
 export interface Match {
     id: string;
+    tournamentId?: string;
     name: string;
     date: number;
     teamA: Team;
@@ -63,6 +67,17 @@ export interface Match {
     status: MatchStatus;
     innings: Inning[];
     currentInning: 1 | 2;
+}
+
+export type TournamentStatus = 'upcoming' | 'ongoing' | 'completed';
+
+export interface Tournament {
+    id: string;
+    name: string;
+    teams: Team[];
+    matchIds: string[];
+    status: TournamentStatus;
+    createdAt: number;
 }
 
 export interface MatchState {

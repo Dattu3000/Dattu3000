@@ -12,12 +12,18 @@ interface SyncEvent {
 class CricketDatabase extends Dexie {
     matches!: EntityTable<Match, 'id'>;
     syncQueue!: EntityTable<SyncEvent, 'id'>;
+    tournaments!: EntityTable<import('../types').Tournament, 'id'>;
 
     constructor() {
         super('CricketDatabase');
         this.version(1).stores({
-            matches: 'id, date, status', // Primary key and indexed props
+            matches: 'id, date, status',
             syncQueue: '++id, matchId, timestamp'
+        });
+        this.version(2).stores({
+            matches: 'id, tournamentId, date, status',
+            syncQueue: '++id, matchId, timestamp',
+            tournaments: 'id, status'
         });
     }
 }

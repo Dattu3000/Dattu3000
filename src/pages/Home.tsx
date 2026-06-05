@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Trophy, History, PlusCircle, User, LogIn } from 'lucide-react';
+import { Trophy, PlusCircle } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/database';
 import { calculateStandings } from '../utils/standingsUtils';
@@ -29,40 +29,26 @@ export default function Home() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {matches.some(m => m.status === 'ongoing' || m.status === 'setup') && (
+                    <button
+                        className="btn btn-secondary"
+                        style={{ padding: '1.2rem', fontSize: '1.2rem', color: 'var(--accent-color)', borderColor: 'var(--accent-color)' }}
+                        onClick={() => {
+                            const ongoing = matches.find(m => m.status === 'ongoing' || m.status === 'setup');
+                            if (ongoing) navigate(ongoing.status === 'setup' ? '/setup' : `/match/${ongoing.id}`);
+                        }}
+                    >
+                        Resume Match
+                    </button>
+                )}
+                
                 <button
                     className="btn"
                     style={{ padding: '1.2rem', fontSize: '1.2rem' }}
                     onClick={() => navigate('/setup')}
                 >
                     <PlusCircle size={24} />
-                    Start New Match
-                </button>
-
-                <button
-                    className="btn btn-secondary"
-                    style={{ padding: '1.2rem', fontSize: '1.2rem' }}
-                    onClick={() => navigate('/login')}
-                >
-                    <LogIn size={24} />
-                    Login / Authenticate
-                </button>
-
-                <button
-                    className="btn btn-secondary"
-                    style={{ padding: '1.2rem', fontSize: '1.2rem' }}
-                    onClick={() => navigate('/history')}
-                >
-                    <History size={24} />
-                    Match History
-                </button>
-
-                <button
-                    className="btn btn-secondary"
-                    style={{ padding: '1.2rem', fontSize: '1.2rem' }}
-                    onClick={() => navigate('/profile')}
-                >
-                    <User size={24} />
-                    User Stats & Profile
+                    Quick Match
                 </button>
             </div>
 

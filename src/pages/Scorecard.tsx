@@ -182,8 +182,15 @@ export default function Scorecard() {
         setShowAIInsights(true);
     };
 
+    const battingColor = match.innings[match.currentInning - 1]?.battingTeamId === match.teamA.id 
+        ? match.teamA.color || '#3b82f6' 
+        : match.teamB.color || '#3b82f6';
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        <div style={{ 
+            display: 'flex', flexDirection: 'column', height: '100vh',
+            '--accent-color': battingColor
+        } as React.CSSProperties}>
             <div className="header" style={{ justifyContent: 'space-between' }}>
                 <button
                     onClick={() => navigate('/')}

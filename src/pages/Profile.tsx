@@ -117,11 +117,8 @@ export default function Profile() {
 
     const handleSignOut = () => {
         setGoogleUser(null);
-        if (playerNamesList.length > 0) {
-            setSelectedPlayerName(playerNamesList[0]);
-        } else {
-            setSelectedPlayerName('');
-        }
+        localStorage.removeItem('is_authenticated');
+        navigate('/login');
     };
 
     const handleDemoLogin = () => {

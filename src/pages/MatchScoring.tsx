@@ -7,7 +7,7 @@ import type { Match, Ball, ExtraType, WicketType, ShotRegion, Player, Team } fro
 import { ArrowLeft, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { BoundaryPopup } from '../components/BoundaryPopup';
-import { FieldGraphic } from '../components/FieldGraphic';
+import { ShotTrackerModal } from '../components/ShotTrackerModal';
 
 export default function MatchScoring() {
     const { id } = useParams<{ id: string }>();
@@ -117,7 +117,7 @@ export default function MatchScoring() {
         }
     };
 
-    const addBall = (runsOffBat: number, _isExtra: boolean = false, extraType: ExtraType = null, extraRuns: number = 0, isWicket: boolean = false, wicketType: WicketType = null, incomingBatterId?: string, incomingBatterName?: string, fielderId?: string, fielderName?: string, shotRegion?: ShotRegion) => {
+    const addBall = (runsOffBat: number, _isExtra: boolean = false, extraType: ExtraType = null, extraRuns: number = 0, isWicket: boolean = false, wicketType: WicketType = null, incomingBatterId?: string, incomingBatterName?: string, fielderId?: string, fielderName?: string, shotRegion?: ShotRegion, shotX?: number, shotY?: number) => {
         const isLegalDelivery = extraType !== 'wide' && extraType !== 'noBall';
         
         // Satisfy linter for unused _isExtra parameter
@@ -171,6 +171,8 @@ export default function MatchScoring() {
             wicketBatsmanId: isWicket ? currentInning.strikerId || null : null,
             fielderId: finalFielderId,
             shotRegion,
+            shotX,
+            shotY,
             timestamp: Date.now(),
             isLegalDelivery
         };
@@ -397,8 +399,15 @@ export default function MatchScoring() {
         setNeedsNames(null);
     };
 
+    const battingColor = battingTeam.color || '#3b82f6';
+    const bowlingColor = bowlingTeam.color || '#ef4444';
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        <div style={{ 
+            display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden',
+            '--accent-color': battingColor,
+            '--danger-color': bowlingColor
+        } as React.CSSProperties}>
             <div className="header" style={{ justifyContent: 'space-between' }}>
                 <button
                     onClick={() => navigate('/')}
@@ -748,9 +757,9 @@ export default function MatchScoring() {
             )}
 
             {shotPrompt && (
-                <FieldGraphic
-                    onSelectZone={(region) => {
-                        addBall(shotPrompt.runs, false, null, 0, false, null, undefined, undefined, undefined, undefined, region);
+                <ShotTrackerModal
+                    onSelectCoordinates={(x, y, region) => {
+                        addBall(shotPrompt.runs, false, null, 0, false, null, undefined, undefined, undefined, undefined, region, x, y);
                         setShotPrompt(null);
                     }}
                     onSkip={() => {
