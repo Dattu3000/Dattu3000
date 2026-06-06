@@ -36,6 +36,8 @@ export interface Ball {
     shotRegion?: ShotRegion;
     shotX?: number;
     shotY?: number;
+    pitchX?: number;
+    pitchY?: number;
     timestamp: number;
     isLegalDelivery: boolean;
 }

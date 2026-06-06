@@ -9,6 +9,7 @@ import { AdBanner } from '../components/AdBanner';
 import { PlayerCard } from '../components/PlayerCard';
 import { calculatePlayerStats } from '../utils/statsUtils';
 import { AIInsights } from '../components/AIInsights';
+import { BowlingPitchMap } from '../components/BowlingPitchMap';
 
 export default function Scorecard() {
     const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ export default function Scorecard() {
     const [expandedInnings, setExpandedInnings] = useState<number[]>([]);
     const [isExporting, setIsExporting] = useState(false);
     const [selectedBatsmanId, setSelectedBatsmanId] = useState<string | null>(null);
+    const [selectedBowlerId, setSelectedBowlerId] = useState<string | null>(null);
     const [showAIInsights, setShowAIInsights] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
 
@@ -416,14 +418,27 @@ export default function Scorecard() {
                                                         const overs = Math.floor(stat.balls / 6) + ((stat.balls % 6) / 10);
                                                         const econ = stat.balls > 0 ? (stat.runs / (stat.balls / 6)).toFixed(2) : '0.00';
                                                         return (
-                                                            <tr key={stat.id} style={{ borderBottom: '1px solid var(--card-bg)' }}>
-                                                                <td style={{ padding: '0.8rem 0.5rem', fontWeight: 'bold' }}>{stat.name}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>{overs.toFixed(1)}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.maidens}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>{stat.runs}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--accent-color)' }}>{stat.wickets}</td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>{econ}</td>
-                                                            </tr>
+                                                            <React.Fragment key={stat.id}>
+                                                                <tr 
+                                                                    onClick={() => setSelectedBowlerId(selectedBowlerId === stat.id ? null : stat.id)}
+                                                                    style={{ borderBottom: '1px solid var(--card-bg)', cursor: 'pointer' }}
+                                                                >
+                                                                    <td style={{ padding: '0.8rem 0.5rem', fontWeight: 'bold' }}>{stat.name}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>{overs.toFixed(1)}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>{stat.maidens}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold' }}>{stat.runs}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 'bold', color: 'var(--accent-color)' }}>{stat.wickets}</td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>{econ}</td>
+                                                                </tr>
+                                                                {selectedBowlerId === stat.id && (
+                                                                    <tr style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}>
+                                                                        <td colSpan={6} style={{ padding: '1rem', borderBottom: '1px solid var(--card-bg)' }}>
+                                                                            <h4 style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.8rem', textTransform: 'uppercase' }}>Pitch Map - {stat.name}</h4>
+                                                                            <BowlingPitchMap balls={inning.balls} bowlerId={stat.id} />
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+                                                            </React.Fragment>
                                                         );
                                                     });
                                                 })()}

@@ -8,6 +8,9 @@ import { ArrowLeft, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { BoundaryPopup } from '../components/BoundaryPopup';
 import { ShotTrackerModal } from '../components/ShotTrackerModal';
+import { DLSCalculator } from '../components/DLSCalculator';
+import { CloudRain } from 'lucide-react';
+import { PitchMapModal } from '../components/PitchMapModal';
 
 export default function MatchScoring() {
     const { id } = useParams<{ id: string }>();
@@ -40,8 +43,10 @@ export default function MatchScoring() {
     const [extraPrompt, setExtraPrompt] = useState<{ type: ExtraType, baseRuns: number } | null>(null);
     const [wicketFlow, setWicketFlow] = useState<{ step: 'type' | 'fielder' | 'batter', type?: WicketType, runs?: number, fielderId?: string, fielderName?: string } | null>(null);
     const [boundaryCelebration, setBoundaryCelebration] = useState<4 | 6 | null>(null);
-    const [shotPrompt, setShotPrompt] = useState<{ runs: number } | null>(null);
+    const [pitchPrompt, setPitchPrompt] = useState<{ runs: number } | null>(null);
+    const [shotPrompt, setShotPrompt] = useState<{ runs: number, pitchX?: number, pitchY?: number } | null>(null);
     const [needsNames, setNeedsNames] = useState<{ type: 'innings' | 'over', strikerId?: string, nonStrikerId?: string, bowlerId?: string } | null>(null);
+    const [showDLS, setShowDLS] = useState(false);
 
     const matchIndex = matches.findIndex(m => m.id === id);
     const match = matches[matchIndex];
@@ -117,7 +122,7 @@ export default function MatchScoring() {
         }
     };
 
-    const addBall = (runsOffBat: number, _isExtra: boolean = false, extraType: ExtraType = null, extraRuns: number = 0, isWicket: boolean = false, wicketType: WicketType = null, incomingBatterId?: string, incomingBatterName?: string, fielderId?: string, fielderName?: string, shotRegion?: ShotRegion, shotX?: number, shotY?: number) => {
+    const addBall = (runsOffBat: number, _isExtra: boolean = false, extraType: ExtraType = null, extraRuns: number = 0, isWicket: boolean = false, wicketType: WicketType = null, incomingBatterId?: string, incomingBatterName?: string, fielderId?: string, fielderName?: string, shotRegion?: ShotRegion, shotX?: number, shotY?: number, pitchX?: number, pitchY?: number) => {
         const isLegalDelivery = extraType !== 'wide' && extraType !== 'noBall';
         
         // Satisfy linter for unused _isExtra parameter
@@ -173,6 +178,8 @@ export default function MatchScoring() {
             shotRegion,
             shotX,
             shotY,
+            pitchX,
+            pitchY,
             timestamp: Date.now(),
             isLegalDelivery
         };
@@ -421,13 +428,22 @@ export default function MatchScoring() {
                         Innings {match.currentInning} • {match.overs} Overs Match
                     </span>
                 </div>
-                <button
-                    onClick={() => navigate(`/scorecard/${match.id}`)}
-                    style={{ background: 'none', border: 'none', color: 'var(--accent-color)', cursor: 'pointer' }}
-                    title="View Scorecard"
-                >
-                    <FileText size={24} />
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                        onClick={() => setShowDLS(true)}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                        title="DLS Calculator"
+                    >
+                        <CloudRain size={24} />
+                    </button>
+                    <button
+                        onClick={() => navigate(`/scorecard/${match.id}`)}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-color)', cursor: 'pointer' }}
+                        title="View Scorecard"
+                    >
+                        <FileText size={24} />
+                    </button>
+                </div>
             </div>
 
             <div className="container" style={{ paddingBottom: '0', overflowY: 'auto' }}>
@@ -756,16 +772,46 @@ export default function MatchScoring() {
                 <BoundaryPopup type={boundaryCelebration} onClose={() => setBoundaryCelebration(null)} />
             )}
 
+            {pitchPrompt && (
+                <PitchMapModal
+                    onSelectCoordinates={(x, y) => {
+                        if (pitchPrompt.runs > 0) {
+                            setShotPrompt({ runs: pitchPrompt.runs, pitchX: x, pitchY: y });
+                        } else {
+                            addBall(0, false, null, 0, false, null, undefined, undefined, undefined, undefined, undefined, undefined, undefined, x, y);
+                        }
+                        setPitchPrompt(null);
+                    }}
+                    onSkip={() => {
+                        if (pitchPrompt.runs > 0) {
+                            setShotPrompt({ runs: pitchPrompt.runs });
+                        } else {
+                            addBall(0);
+                        }
+                        setPitchPrompt(null);
+                    }}
+                />
+            )}
+
             {shotPrompt && (
                 <ShotTrackerModal
                     onSelectCoordinates={(x, y, region) => {
-                        addBall(shotPrompt.runs, false, null, 0, false, null, undefined, undefined, undefined, undefined, region, x, y);
+                        addBall(shotPrompt.runs, false, null, 0, false, null, undefined, undefined, undefined, undefined, region, x, y, shotPrompt.pitchX, shotPrompt.pitchY);
                         setShotPrompt(null);
                     }}
                     onSkip={() => {
-                        addBall(shotPrompt.runs);
+                        addBall(shotPrompt.runs, false, null, 0, false, null, undefined, undefined, undefined, undefined, undefined, undefined, undefined, shotPrompt.pitchX, shotPrompt.pitchY);
                         setShotPrompt(null);
                     }}
+                />
+            )}
+
+            {showDLS && (
+                <DLSCalculator
+                    initialOvers={match.overs}
+                    team1Score={match.innings[0].score}
+                    team1OversFaced={match.innings[0].oversCompleted || match.overs}
+                    onClose={() => setShowDLS(false)}
                 />
             )}
 
@@ -794,11 +840,7 @@ export default function MatchScoring() {
                                     className="btn"
                                     style={{ padding: '1.2rem 0', fontSize: '1.5rem', gridColumn: runs === 0 ? 'span 2' : 'span 1' }}
                                     onClick={() => {
-                                        if (runs > 0) {
-                                            setShotPrompt({ runs });
-                                        } else {
-                                            addBall(runs);
-                                        }
+                                        setPitchPrompt({ runs });
                                     }}
                                 >
                                     {runs}
